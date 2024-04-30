@@ -1,5 +1,6 @@
 package dev.jonathanb.cs386d;
 
+import java.util.HashMap;
 import java.util.Map;
 
 // Nulls excluded in other fields
@@ -27,5 +28,30 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
         }
 
         return totalFrequencyOfOverlap + semijoinSelectivityLeftoverPart;
+    }
+
+    public ColumnStats semijoinStatsAgainst(ColumnStats join) {
+        double discardedFraction = fractionNull;
+        Map<HistogramValue, Double> newMostCommon = new HashMap<>();
+        long discardedDistinct = 0;
+        for (Map.Entry<HistogramValue, Double> myEntry : mostCommon.entrySet()) {
+            if (join.mostCommon.containsKey(myEntry.getKey())) {
+                newMostCommon.put(myEntry.getKey(), myEntry.getValue());
+            } else {
+                discardedFraction += myEntry.getValue();
+                discardedDistinct++;
+            }
+        }
+
+        for (Map.Entry<HistogramValue, Double> entry : newMostCommon.entrySet()) {
+            // Note that this element was not discarded.
+            // New elem count = old elem count
+            // New frequency * new total = old frequency * old total
+            // New total = old total * (1 - discarded fraction)
+            // New frequency * old total * (1 - discarded fraction) = old frequency * old total
+            // New frequency * (1 - discarded fraction) = old frequency
+            entry.setValue(entry.getValue() / (1 - discardedFraction));
+        }
+        return new ColumnStats(0, nDistinct - discardedDistinct, newMostCommon);
     }
 }
