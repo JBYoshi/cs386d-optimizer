@@ -66,10 +66,12 @@ public class Main {
                 Column col = new Column(relation, resultSet.getString("attname"));
 
                 double nullFrac = resultSet.getDouble("null_frac");
-                double nDistinct = resultSet.getDouble("n_distinct");
-                if (nDistinct < 0) {
-                    nDistinct *= -1;
-                    nDistinct *= count;
+                double nDistinctDouble = resultSet.getDouble("n_distinct");
+                long nDistinct;
+                if (nDistinctDouble < 0) {
+                    nDistinct = Math.round(-1 * count * nDistinctDouble);
+                } else {
+                    nDistinct = Math.round(nDistinctDouble);
                 }
                 Map<HistogramValue, Double> mostCommon = new HashMap<>();
                 if (resultSet.getArray("most_common_vals") != null) {
@@ -85,7 +87,7 @@ public class Main {
                     histogram = Arrays.stream(histogramResults).map(HistogramValue::new).toList();
                 }
 
-                double nDistinctInHistogram = nDistinct - mostCommon.size();
+                long nDistinctInHistogram = nDistinct - mostCommon.size();
                 double fractionInHistogram = 1 - nullFrac - mostCommon.values().stream().reduce(0.0, Double::sum);
                 columns.put(col, new ColumnStats(nullFrac, nDistinct, mostCommon/*, HistogramRange.makeRange(histogram, nDistinctInHistogram, fractionInHistogram)*/));
             }

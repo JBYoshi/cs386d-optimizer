@@ -27,7 +27,7 @@ public record JoinPredicate(Column a, Column b) {
                 mostCommonCounts.put(aElem.getKey(), elemCount);
             }
         }
-        double nDistinct = mostCommonCounts.size();
+        long nDistinct = mostCommonCounts.size();
 
         // Idea 1:
         // Split both sides into ranges (for now ignore most common elements)
