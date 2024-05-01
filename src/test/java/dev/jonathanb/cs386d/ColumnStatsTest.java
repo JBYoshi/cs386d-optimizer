@@ -2,6 +2,7 @@ package dev.jonathanb.cs386d;
 
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -10,8 +11,8 @@ import static org.junit.Assert.assertEquals;
 public class ColumnStatsTest {
     @Test
     public void testJoinNoFrequent() {
-        ColumnStats left = new ColumnStats(0, 5, Map.of());
-        ColumnStats right = new ColumnStats(0, 10, Map.of());
+        ColumnStats left = new ColumnStats(0, 5, Map.of(), List.of());
+        ColumnStats right = new ColumnStats(0, 10, Map.of(), List.of());
         assertEquals(1, left.semijoin(right).selectivity(), 0.001);
         assertEquals(0.5, right.semijoin(left).selectivity(), 0.001);
         // Say there is one entry of each value. Left has 1-5, right has 1-10.
@@ -19,15 +20,15 @@ public class ColumnStatsTest {
         assertEquals(0.1, left.join(right).selectivity(), 0.001);
         assertEquals(0.1, right.join(left).selectivity(), 0.001);
 
-        assertEquals(new ColumnStats(0, 5, Map.of()), left.join(right).newStats());
+        assertEquals(new ColumnStats(0, 5, Map.of(), List.of()), left.join(right).newStats());
     }
 
     @Test
     public void testBothFrequentOnly() {
         ColumnStats left = new ColumnStats(0, 3,
-                Map.of(new HistogramValue("A"), 0.5, new HistogramValue("B"), 0.2, new HistogramValue("C"), 0.3));
+                Map.of(new HistogramValue("A"), 0.5, new HistogramValue("B"), 0.2, new HistogramValue("C"), 0.3), List.of());
         ColumnStats right = new ColumnStats(0, 3,
-                Map.of(new HistogramValue("B"), 0.25, new HistogramValue("C"), 0.35, new HistogramValue("D"), 0.4));
+                Map.of(new HistogramValue("B"), 0.25, new HistogramValue("C"), 0.35, new HistogramValue("D"), 0.4), List.of());
         assertEquals(0.5, left.semijoin(right).selectivity(), 0.001);
         assertEquals(0.6, right.semijoin(left).selectivity(), 0.001);
 
@@ -45,9 +46,9 @@ public class ColumnStatsTest {
     @Test
     public void testJoinEqualMix() {
         ColumnStats left = new ColumnStats(0, 4,
-                Map.of(new HistogramValue("A"), 0.4, new HistogramValue("B"), 0.5));
+                Map.of(new HistogramValue("A"), 0.4, new HistogramValue("B"), 0.5), List.of());
         ColumnStats right = new ColumnStats(0, 4,
-                Map.of(new HistogramValue("B"), 0.25, new HistogramValue("C"), 0.3));
+                Map.of(new HistogramValue("B"), 0.25, new HistogramValue("C"), 0.3), List.of());
         // Both are 1 because each side has 4 elements.
         assertEquals(1, left.semijoin(right).selectivity(), 0.001);
         assertEquals(1, right.semijoin(left).selectivity(), 0.001);
@@ -63,9 +64,9 @@ public class ColumnStatsTest {
     @Test
     public void testJoinUnEqualMix() {
         ColumnStats left = new ColumnStats(0, 10,
-                Map.of(new HistogramValue("A"), 0.4, new HistogramValue("B"), 0.5));
+                Map.of(new HistogramValue("A"), 0.4, new HistogramValue("B"), 0.5), List.of());
         ColumnStats right = new ColumnStats(0, 4,
-                Map.of(new HistogramValue("B"), 0.25, new HistogramValue("C"), 0.3));
+                Map.of(new HistogramValue("B"), 0.25, new HistogramValue("C"), 0.3), List.of());
 
         // Half from the match with B, so the other half is a 3 versus 9 join.
         assertEquals(0.5 + (3.0 / 9 / 2), left.semijoin(right).selectivity(), 0.001);
@@ -89,9 +90,9 @@ public class ColumnStatsTest {
     @Test
     public void testJoinOneFrequentOnly() {
         ColumnStats left = new ColumnStats(0, 3,
-                Map.of(new HistogramValue("A"), 0.4, new HistogramValue("B"), 0.35, new HistogramValue("C"), 0.25));
+                Map.of(new HistogramValue("A"), 0.4, new HistogramValue("B"), 0.35, new HistogramValue("C"), 0.25), List.of());
         ColumnStats right = new ColumnStats(0, 10,
-                Map.of(new HistogramValue("B"), 0.25, new HistogramValue("C"), 0.1, new HistogramValue("D"), 0.1));
+                Map.of(new HistogramValue("B"), 0.25, new HistogramValue("C"), 0.1, new HistogramValue("D"), 0.1), List.of());
         // 0.6 because B and C match, A does not
         assertEquals(0.6, left.semijoin(right).selectivity(), 0.001);
         // 0.35 from histogram exact match, 0.65 * 1/8 from rest
@@ -103,8 +104,8 @@ public class ColumnStatsTest {
 
     @Test
     public void testJoin2x2() {
-        ColumnStats left = new ColumnStats(0, 2, Map.of(new HistogramValue("A"), 0.5));
-        ColumnStats right = new ColumnStats(0, 2, Map.of(new HistogramValue("B"), 0.5));
+        ColumnStats left = new ColumnStats(0, 2, Map.of(new HistogramValue("A"), 0.5), List.of());
+        ColumnStats right = new ColumnStats(0, 2, Map.of(new HistogramValue("B"), 0.5), List.of());
         // Since we assume maximum overlap, this effectively means both are half A and half B.
         // Full semijoin selectivity, and half join selectivity (keep AA and BB, not AB or BA).
         assertEquals(1, left.semijoin(right).selectivity(), 0.001);
@@ -112,15 +113,15 @@ public class ColumnStatsTest {
         assertEquals(0.5, left.join(right).selectivity(), 0.001);
         assertEquals(0.5, right.join(left).selectivity(), 0.001);
 
-        ColumnStats expectedJoinStats = new ColumnStats(0, 2, Map.of());
+        ColumnStats expectedJoinStats = new ColumnStats(0, 2, Map.of(), List.of());
         assertEquals(expectedJoinStats, left.join(right).newStats());
         assertEquals(expectedJoinStats, right.join(left).newStats());
     }
 
     @Test
     public void testJoin3x3() {
-        ColumnStats left = new ColumnStats(0, 3, Map.of(new HistogramValue("A"), 0.333, new HistogramValue("B"), 0.333));
-        ColumnStats right = new ColumnStats(0, 3, Map.of(new HistogramValue("B"), 0.333, new HistogramValue("C"), 0.333));
+        ColumnStats left = new ColumnStats(0, 3, Map.of(new HistogramValue("A"), 0.333, new HistogramValue("B"), 0.333), List.of());
+        ColumnStats right = new ColumnStats(0, 3, Map.of(new HistogramValue("B"), 0.333, new HistogramValue("C"), 0.333), List.of());
         // Since we assume maximum overlap, this effectively means both are half A and half B.
         // Full semijoin selectivity, and half join selectivity (keep AA and BB, not AB or BA).
         assertEquals(1, left.semijoin(right).selectivity(), 0.001);

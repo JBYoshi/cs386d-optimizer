@@ -47,9 +47,18 @@ public abstract class OperationTree {
 
     public static class TableScan extends OperationTree {
         private final TableRef table;
-        public TableScan(RelationStats stats, TableRef table) {
-            super(stats, Set.of(table), 0);
+        private Set<ValuePredicate> predicates;
+        public TableScan(RelationStats stats, TableRef table, Set<ValuePredicate> valuePredicates) {
+            super(applyPredicates(stats, valuePredicates), Set.of(table), 0);
             this.table = table;
+            this.predicates = valuePredicates;
+        }
+
+        private static RelationStats applyPredicates(RelationStats stats, Set<ValuePredicate> valuePredicates) {
+            for (ValuePredicate predicate : valuePredicates) {
+                stats = stats.applySelect(predicate.getSelectivity(stats.columnStats().get(predicate.getColumn())), Set.of(predicate.getColumn()));
+            }
+            return stats;
         }
 
         public TableRef getTable() {
@@ -59,7 +68,7 @@ public abstract class OperationTree {
         @Override
         protected void toString(StringBuilder builder, int depth) {
             builder.append("|".repeat(depth));
-            builder.append("TableScan(").append(this.table).append(")");
+            builder.append("TableScan(").append(this.table).append(" WHERE ").append(this.predicates).append(")");
         }
 
         @Override

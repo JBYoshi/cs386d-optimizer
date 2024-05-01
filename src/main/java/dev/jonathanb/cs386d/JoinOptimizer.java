@@ -1,12 +1,13 @@
 package dev.jonathanb.cs386d;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class JoinOptimizer {
-    public OperationTree optimize(Map<TableRef, RelationStats> baseRelations, Set<JoinPredicate> predicates) {
+    public OperationTree optimize(Map<TableRef, RelationStats> baseRelations, Set<JoinPredicate> predicates, Set<ValuePredicate> valuePredicates) {
         Map<Set<TableRef>, OperationTree> baseOps = new HashMap<>();
         for (Map.Entry<TableRef, RelationStats> baseRelation : baseRelations.entrySet()) {
-            OperationTree tree = new OperationTree.TableScan(baseRelation.getValue(), baseRelation.getKey());
+            OperationTree tree = new OperationTree.TableScan(baseRelation.getValue(), baseRelation.getKey(), valuePredicates.stream().filter(x -> x.getColumn().table().equals(baseRelation.getKey())).collect(Collectors.toSet()));
             baseOps.put(tree.getTablesSet(), tree);
         }
         Map<Set<TableRef>, OperationTree> prevOps = new HashMap<>(baseOps);

@@ -2,7 +2,6 @@ package dev.jonathanb.cs386d;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.MathContext;
 import java.math.RoundingMode;
 
 public record HistogramValue(Object obj, BigDecimal numeric) implements Comparable<HistogramValue> {

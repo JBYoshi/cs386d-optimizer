@@ -1,19 +1,23 @@
 package dev.jonathanb.cs386d;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 // Nulls excluded in other fields
 // histogram excludes mostCommon
-public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValue, Double> mostCommon/*, List<HistogramRange> histogram*/) {
+public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValue, Double> mostCommon, List<HistogramRange> histogram) {
     public double fractionUnmapped() {
         return 1 - fractionNull - mostCommon.values().stream().mapToDouble(Double::doubleValue).sum();
     }
 
     public long nDistinctUnmapped() {
         return nDistinct - mostCommon.size();
+    }
+
+    public double estimatedFrequencyAssumingExists(HistogramValue value) {
+        if (mostCommon.containsKey(value)) {
+            return mostCommon.get(value);
+        }
+        return fractionUnmapped() / nDistinctUnmapped();
     }
 
     public ColumnSelectivity semijoin(ColumnStats join) {
@@ -65,7 +69,7 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
         } else {
             newNDistinct = Math.min(nDistinct, join.nDistinct);
         }
-        return new ColumnSelectivity(selectivity, new ColumnStats(0, newNDistinct, newMostCommon));
+        return new ColumnSelectivity(selectivity, new ColumnStats(0, newNDistinct, newMostCommon, List.of()));
     }
 
     public ColumnSelectivity join(ColumnStats other) {
@@ -132,6 +136,6 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
             newNDistinct = common.size();
         }
 
-        return new ColumnSelectivity(selectivity, new ColumnStats(0, newNDistinct, newMostCommon));
+        return new ColumnSelectivity(selectivity, new ColumnStats(0, newNDistinct, newMostCommon, List.of()));
     }
 }

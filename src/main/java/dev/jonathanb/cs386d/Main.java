@@ -26,7 +26,8 @@ public class Main {
         System.out.println("Stats loaded.");
         System.out.println(new JoinOptimizer().optimize(
                 stats,
-                query.predicates()
+                query.predicates(),
+                query.valuePredicates()
         ));
     }
 
@@ -89,7 +90,7 @@ public class Main {
 
                 long nDistinctInHistogram = nDistinct - mostCommon.size();
                 double fractionInHistogram = 1 - nullFrac - mostCommon.values().stream().reduce(0.0, Double::sum);
-                columns.put(col, new ColumnStats(nullFrac, nDistinct, mostCommon/*, HistogramRange.makeRange(histogram, nDistinctInHistogram, fractionInHistogram)*/));
+                columns.put(col, new ColumnStats(nullFrac, nDistinct, mostCommon, HistogramRange.makeRange(histogram, nDistinctInHistogram, fractionInHistogram)));
             }
 
             stats.put(relation, new RelationStats(count, columns));
