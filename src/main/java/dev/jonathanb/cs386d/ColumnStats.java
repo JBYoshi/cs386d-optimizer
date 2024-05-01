@@ -1,7 +1,9 @@
 package dev.jonathanb.cs386d;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 // Nulls excluded in other fields
 // histogram excludes mostCommon
@@ -119,5 +121,32 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
         }
 
         return selectivity;
+    }
+
+    public ColumnStats joinStatsAgainst(ColumnStats other) {
+        double selectivity = joinSelectivityAgainst(other);
+
+        Map<HistogramValue, Double> newMostCommon = new HashMap<>();
+        for (Map.Entry<HistogramValue, Double> myEntry : mostCommon.entrySet()) {
+            if (other.mostCommon.containsKey(myEntry.getKey())) {
+                // New fraction = count / new total
+                // New total = selectivity * old total (with "old" meaning "Cartesian product")
+                // Old fraction = count / old total
+                // Old fraction = my freq * other freq
+                // Combined:
+                // New fraction = count / selectivity / count * my freq * other freq = my freq * other freq / selectivity
+                newMostCommon.put(myEntry.getKey(), myEntry.getValue() * other.mostCommon.get(myEntry.getKey()) / selectivity);
+            }
+            // If a value isn't in both histograms, it isn't guaranteed to be in the join, so skip those.
+        }
+
+        long newNDistinct = Math.min(nDistinct, other.nDistinct);
+        if (nDistinctUnmapped() == 0 && other.nDistinctUnmapped() == 0) {
+            Set<HistogramValue> common = new HashSet<>(mostCommon.keySet());
+            common.retainAll(other.mostCommon.keySet());
+            newNDistinct = common.size();
+        }
+
+        return new ColumnStats(0, newNDistinct, newMostCommon);
     }
 }

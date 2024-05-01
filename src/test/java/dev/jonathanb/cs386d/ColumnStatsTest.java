@@ -3,6 +3,7 @@ package dev.jonathanb.cs386d;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -17,6 +18,8 @@ public class ColumnStatsTest {
         // Cross product gives 50 tuples, of which 5 match. So it should be 0.1.
         assertEquals(0.1, left.joinSelectivityAgainst(right), 0.001);
         assertEquals(0.1, right.joinSelectivityAgainst(left), 0.001);
+
+        assertEquals(new ColumnStats(0, 5, Map.of()), left.joinStatsAgainst(right));
     }
 
     @Test
@@ -30,6 +33,13 @@ public class ColumnStatsTest {
 
         assertEquals(0.2 * 0.25 + 0.3 * 0.35, left.joinSelectivityAgainst(right), 0.001);
         assertEquals(0.2 * 0.25 + 0.3 * 0.35, right.joinSelectivityAgainst(left), 0.001);
+
+        ColumnStats joinStats = left.joinStatsAgainst(right);
+        assertEquals(2, joinStats.nDistinct());
+        assertEquals(0, joinStats.fractionNull(), 0.001);
+        assertEquals(0.2 * 0.25 / (0.2 * 0.25 + 0.3 * 0.35), joinStats.mostCommon().get(new HistogramValue("B")), 0.001);
+        assertEquals(0.3 * 0.35 / (0.2 * 0.25 + 0.3 * 0.35), joinStats.mostCommon().get(new HistogramValue("C")), 0.001);
+        assertEquals(Set.of(new HistogramValue("B"), new HistogramValue("C")), joinStats.mostCommon().keySet());
     }
 
     @Test
@@ -101,5 +111,29 @@ public class ColumnStatsTest {
         assertEquals(1, right.semijoinSelectivityAgainst(left), 0.001);
         assertEquals(0.5, left.joinSelectivityAgainst(right), 0.001);
         assertEquals(0.5, right.joinSelectivityAgainst(left), 0.001);
+
+        ColumnStats expectedJoinStats = new ColumnStats(0, 2, Map.of());
+        assertEquals(expectedJoinStats, left.joinStatsAgainst(right));
+        assertEquals(expectedJoinStats, right.joinStatsAgainst(left));
     }
+
+    @Test
+    public void testJoin3x3() {
+        ColumnStats left = new ColumnStats(0, 3, Map.of(new HistogramValue("A"), 0.333, new HistogramValue("B"), 0.333));
+        ColumnStats right = new ColumnStats(0, 3, Map.of(new HistogramValue("B"), 0.333, new HistogramValue("C"), 0.333));
+        // Since we assume maximum overlap, this effectively means both are half A and half B.
+        // Full semijoin selectivity, and half join selectivity (keep AA and BB, not AB or BA).
+        assertEquals(1, left.semijoinSelectivityAgainst(right), 0.001);
+        assertEquals(1, right.semijoinSelectivityAgainst(left), 0.001);
+        assertEquals(0.3333, left.joinSelectivityAgainst(right), 0.001);
+        assertEquals(0.3333, right.joinSelectivityAgainst(left), 0.001);
+
+        ColumnStats joinStats = left.joinStatsAgainst(right);
+        assertEquals(0, joinStats.fractionNull(), 0.001);
+        assertEquals(3, joinStats.nDistinct());
+        assertEquals(0.3333, joinStats.mostCommon().get(new HistogramValue("B")), 0.001);
+        assertEquals(Set.of(new HistogramValue("B")), joinStats.mostCommon().keySet());
+    }
+
+
 }
