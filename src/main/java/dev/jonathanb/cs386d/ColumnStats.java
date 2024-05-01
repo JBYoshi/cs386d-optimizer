@@ -33,7 +33,7 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
 
         // The rest (if there is any) follows the original model.
         double semijoinSelectivityLeftoverPart = 0;
-        if (unsharedDistinctMine > 0 && nDistinctUnmapped() > 0) { // TODO: one of these is redundant but I'm missing the brainpower to figure out which.
+        if (nDistinctUnmapped() > 0) {
             semijoinSelectivityLeftoverPart = unsharedFractionMine * Math.min((double) unsharedDistinctTheirs / unsharedDistinctMine, 1);
         }
 
@@ -71,9 +71,6 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
     }
 
     public double joinSelectivityAgainst(ColumnStats other) {
-        double sharedFractionMine = 0, sharedFractionTheirs = 0;
-        double unsharedFractionMine = 1 - fractionNull, unsharedFractionTheirs = 1 - fractionNull;
-        double fractionUnmappedMySide = 1 - fractionNull, fractionUnmappedTheirSide = 1 - fractionNull;
         long unsharedDistinctMine = nDistinct, unsharedDistinctTheirs = other.nDistinct;
         long nShared = 0;
         double selectivity = 0;
@@ -81,10 +78,6 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
         // First consider values that exist in both histograms.
         for (Map.Entry<HistogramValue, Double> myEntry : mostCommon.entrySet()) {
             if (other.mostCommon.containsKey(myEntry.getKey())) {
-                sharedFractionMine += myEntry.getValue();
-                sharedFractionTheirs += other.mostCommon.get(myEntry.getKey());
-                unsharedFractionMine -= myEntry.getValue();
-                unsharedFractionTheirs -= other.mostCommon.get(myEntry.getKey());
                 selectivity += myEntry.getValue() * other.mostCommon.get(myEntry.getKey());
                 unsharedDistinctMine--;
                 unsharedDistinctTheirs--;
