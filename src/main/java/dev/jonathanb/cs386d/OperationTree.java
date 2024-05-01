@@ -49,7 +49,7 @@ public abstract class OperationTree {
         private final TableRef table;
         private Set<ValuePredicate> predicates;
         public TableScan(RelationStats stats, TableRef table, Set<ValuePredicate> valuePredicates) {
-            super(applyPredicates(stats, valuePredicates), Set.of(table), 0);
+            super(applyPredicates(stats, valuePredicates), Set.of(table), stats.numRows());
             this.table = table;
             this.predicates = valuePredicates;
         }
@@ -68,7 +68,7 @@ public abstract class OperationTree {
         @Override
         protected void toString(StringBuilder builder, int depth) {
             builder.append("|".repeat(depth));
-            builder.append("TableScan(").append(this.table).append(" WHERE ").append(this.predicates).append(")");
+            builder.append("TableScan(").append(this.table).append(" WHERE ").append(this.predicates).append(") #").append(getStats().numRows()).append(" / ").append(getTotalCost());
         }
 
         @Override
@@ -83,7 +83,7 @@ public abstract class OperationTree {
 
         public Join(RelationStats stats, OperationTree leftTree, OperationTree rightTree, TableRef leftTable, TableRef rightTable, Set<JoinPredicate> predicates) {
             super(stats, Stream.concat(leftTree.tables.stream(), rightTree.tables.stream()).collect(Collectors.toSet()),
-                    leftTree.totalCost + rightTree.totalCost);
+                    leftTree.totalCost + rightTree.totalCost + stats.numRows());
             this.leftTree = leftTree;
             this.rightTree = rightTree;
             this.leftTable = leftTable;
@@ -108,7 +108,11 @@ public abstract class OperationTree {
             builder.append(rightTable);
             builder.append(") on [");
             builder.append(predicates.stream().map(JoinPredicate::toString).collect(Collectors.joining(", ")));
-            builder.append("])\n");
+            builder.append("])# ");
+            builder.append(getStats().numRows());
+            builder.append(" / ");
+            builder.append(getTotalCost());
+            builder.append("\n");
             leftTree.toString(builder, depth + 1);
             builder.append("\n");
             rightTree.toString(builder, depth + 1);

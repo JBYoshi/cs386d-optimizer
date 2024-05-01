@@ -158,7 +158,7 @@ public abstract class ValuePredicate {
 
         @Override
         public ColumnSelectivity getSelectivity(ColumnStats stats) {
-            if (invert) {
+            if (!invert) {
                 return new ColumnSelectivity(stats.fractionNull(), new ColumnStats(1, 0, Map.of(), List.of()));
             }
             Map<HistogramValue, Double> newMostCommon = new HashMap<>();
