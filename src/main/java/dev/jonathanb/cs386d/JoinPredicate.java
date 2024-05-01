@@ -35,19 +35,6 @@ public record JoinPredicate(Column a, Column b) {
             }
         }
 
-        double count = stats.numRows() * aStats.joinSelectivityAgainst(bStats);
-
-        final double countFinal = count * aStats.joinSelectivityAgainst(bStats);
-        ColumnStats mergedStats = aStats.joinStatsAgainst(bStats);
-
-        Map<Column, ColumnStats> updatedColumns = new HashMap<>();
-        for (Map.Entry<Column, ColumnStats> entry : stats.columnStats().entrySet()) {
-            if (equalColumns.contains(entry.getKey())) {
-                updatedColumns.put(entry.getKey(), mergedStats);
-            } else {
-                updatedColumns.put(entry.getKey(), entry.getValue());
-            }
-        }
-        return new RelationStats(countFinal, updatedColumns);
+        return stats.applySelect(aStats.join(bStats), equalColumns);
     }
 }

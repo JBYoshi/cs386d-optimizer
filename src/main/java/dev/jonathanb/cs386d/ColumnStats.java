@@ -16,7 +16,7 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
         return nDistinct - mostCommon.size();
     }
 
-    public double semijoinSelectivityAgainst(ColumnStats join) {
+    public ColumnSelectivity semijoin(ColumnStats join) {
         double sharedFractionMine = 0;
         double unsharedFractionMine = 1 - fractionNull;
         long unsharedDistinctMine = nDistinct, unsharedDistinctTheirs = join.nDistinct;
@@ -37,17 +37,15 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
             semijoinSelectivityLeftoverPart = unsharedFractionMine * Math.min((double) unsharedDistinctTheirs / unsharedDistinctMine, 1);
         }
 
-        return sharedFractionMine + semijoinSelectivityLeftoverPart;
-    }
+        double selectivity = sharedFractionMine + semijoinSelectivityLeftoverPart;
 
-    public ColumnStats semijoinStatsAgainst(ColumnStats join) {
-        double unsharedFractionMine = 1 - fractionNull;
+        double oneMinusDiscardedFraction = 1 - fractionNull;
         Map<HistogramValue, Double> newMostCommon = new HashMap<>();
         for (Map.Entry<HistogramValue, Double> myEntry : mostCommon.entrySet()) {
             if (join.mostCommon.containsKey(myEntry.getKey())) {
                 newMostCommon.put(myEntry.getKey(), myEntry.getValue());
             } else {
-                unsharedFractionMine -= myEntry.getValue();
+                oneMinusDiscardedFraction -= myEntry.getValue();
             }
         }
 
@@ -58,7 +56,7 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
             // New total = old total * (1 - discarded fraction)
             // New frequency * old total * (1 - discarded fraction) = old frequency * old total
             // New frequency * (1 - discarded fraction) = old frequency
-            entry.setValue(entry.getValue() / unsharedFractionMine);
+            entry.setValue(entry.getValue() / oneMinusDiscardedFraction);
         }
 
         long newNDistinct;
@@ -67,10 +65,10 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
         } else {
             newNDistinct = Math.min(nDistinct, join.nDistinct);
         }
-        return new ColumnStats(0, newNDistinct, newMostCommon);
+        return new ColumnSelectivity(selectivity, new ColumnStats(0, newNDistinct, newMostCommon));
     }
 
-    public double joinSelectivityAgainst(ColumnStats other) {
+    public ColumnSelectivity join(ColumnStats other) {
         long unsharedDistinctMine = nDistinct, unsharedDistinctTheirs = other.nDistinct;
         long nShared = 0;
         double selectivity = 0;
@@ -113,12 +111,6 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
             selectivity += fractionUnmapped() * other.fractionUnmapped() / Math.max(numImplicitValuesSelf, numImplicitValuesOther);
         }
 
-        return selectivity;
-    }
-
-    public ColumnStats joinStatsAgainst(ColumnStats other) {
-        double selectivity = joinSelectivityAgainst(other);
-
         Map<HistogramValue, Double> newMostCommon = new HashMap<>();
         for (Map.Entry<HistogramValue, Double> myEntry : mostCommon.entrySet()) {
             if (other.mostCommon.containsKey(myEntry.getKey())) {
@@ -140,6 +132,6 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
             newNDistinct = common.size();
         }
 
-        return new ColumnStats(0, newNDistinct, newMostCommon);
+        return new ColumnSelectivity(selectivity, new ColumnStats(0, newNDistinct, newMostCommon));
     }
 }
