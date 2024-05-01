@@ -1,5 +1,6 @@
 package dev.jonathanb.cs386d;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,6 +35,14 @@ public abstract class OperationTree {
         return builder.toString();
     }
 
+    public final Set<JoinPredicate> collectJoins() {
+        Set<JoinPredicate> joins = new HashSet<>();
+        collectJoins(joins);
+        return joins;
+    }
+
+    protected abstract void collectJoins(Set<JoinPredicate> joins);
+
     protected abstract void toString(StringBuilder builder, int depth);
 
     public static class TableScan extends OperationTree {
@@ -51,6 +60,10 @@ public abstract class OperationTree {
         protected void toString(StringBuilder builder, int depth) {
             builder.append("|".repeat(depth));
             builder.append("TableScan(").append(this.table).append(")");
+        }
+
+        @Override
+        protected void collectJoins(Set<JoinPredicate> joins) {
         }
     }
 
@@ -90,6 +103,13 @@ public abstract class OperationTree {
             leftTree.toString(builder, depth + 1);
             builder.append("\n");
             rightTree.toString(builder, depth + 1);
+        }
+
+        @Override
+        protected void collectJoins(Set<JoinPredicate> joins) {
+            joins.addAll(predicates);
+            leftTree.collectJoins(joins);
+            rightTree.collectJoins(joins);
         }
     }
 }

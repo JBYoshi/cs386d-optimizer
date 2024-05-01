@@ -65,8 +65,11 @@ public class JoinOptimizer {
         baseColumnStats.putAll(right.getStats().columnStats());
         RelationStats stats = new RelationStats(numRows, baseColumnStats);
 
+        Set<JoinPredicate> allPredicates = new HashSet<>(left.collectJoins());
+        allPredicates.addAll(right.collectJoins());
         for (JoinPredicate predicate : relevantPredicates) {
-            stats = predicate.apply(stats);
+            stats = predicate.apply(stats, allPredicates);
+            allPredicates.add(predicate);
         }
 
         return stats;
