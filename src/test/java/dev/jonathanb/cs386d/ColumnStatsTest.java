@@ -93,8 +93,8 @@ public class ColumnStatsTest {
                 Map.of(new HistogramValue("A"), 0.4, new HistogramValue("B"), 0.35, new HistogramValue("C"), 0.25), List.of());
         ColumnStats right = new ColumnStats(0, 10,
                 Map.of(new HistogramValue("B"), 0.25, new HistogramValue("C"), 0.1, new HistogramValue("D"), 0.1), List.of());
-        // 0.6 because B and C match, A does not
-        assertEquals(0.6, left.semijoin(right).selectivity(), 0.001);
+        // 1.0 because B and C match, and A can go to the leftover part
+        assertEquals(1.0, left.semijoin(right).selectivity(), 0.001);
         // 0.35 from histogram exact match, 0.65 * 1/8 from rest
         assertEquals(0.35 + 0.65 / 8, right.semijoin(left).selectivity(), 0.001);
 

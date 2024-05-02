@@ -37,7 +37,7 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
 
         // The rest (if there is any) follows the original model.
         double semijoinSelectivityLeftoverPart = 0;
-        if (nDistinctUnmapped() > 0) {
+        if (unsharedDistinctMine > 0 && (nDistinctUnmapped() > 0 || join.nDistinctUnmapped() > 0)) {
             semijoinSelectivityLeftoverPart = unsharedFractionMine * Math.min((double) unsharedDistinctTheirs / unsharedDistinctMine, 1);
         }
 
@@ -64,7 +64,7 @@ public record ColumnStats(double fractionNull, long nDistinct, Map<HistogramValu
         }
 
         long newNDistinct;
-        if (nDistinct == mostCommon.size()) {
+        if (nDistinct == mostCommon.size() && join.nDistinct == join.mostCommon.size()) {
             newNDistinct = newMostCommon.size();
         } else {
             newNDistinct = Math.min(nDistinct, join.nDistinct);
