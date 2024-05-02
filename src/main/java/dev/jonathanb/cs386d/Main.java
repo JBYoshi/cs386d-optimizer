@@ -23,30 +23,30 @@ public class Main {
 
         generate("10a", conn);
 
-//        BenchmarkQuery query = BenchmarkQuery.loadFromBenchmark("10a");
-//        Map<TableRef, RelationStats> stats = fetchStats(query.relations(), conn);
-//        OperationTree myTree = new JoinOptimizer().optimize(stats, query.predicates(), query.valuePredicates());
-//        System.out.println(TTJBenchmarkWriter.writeTree(query, "q10a_", myTree, conn));
-//        System.out.println("My tree (outermost is final result):\n" + myTree);
-//        TableRef ci = new TableRef("ci", new Table("imdb", "cast_info"));
-//        TableRef chn = new TableRef("chn", new Table("imdb", "char_name"));
-//        TableRef t = new TableRef("t", new Table("imdb", "title"));
-//        TableRef rt = new TableRef("rt", new Table("imdb", "role_type"));
-//        TableRef mc = new TableRef("mc", new Table("imdb", "movie_companies"));
-//        TableRef ct = new TableRef("ct", new Table("imdb", "company_type"));
-//        TableRef cn = new TableRef("cn", new Table("imdb", "company_name"));
-//
-//        System.out.println("\nSample tree:\n" + new JoinOptimizer().testSpecific(
-//                List.of(
-//                        List.of(mc),
-//                        List.of(mc, cn),
-//                        List.of(mc, ci),
-//                        List.of(ci, rt),
-//                        List.of(mc, ct),
-//                        List.of(mc, t),
-//                        List.of(ci, chn)
-//                ),
-//                stats, query.predicates(), query.valuePredicates()));
+        BenchmarkQuery query = BenchmarkQuery.loadFromBenchmark("10a");
+        Map<TableRef, RelationStats> stats = fetchStats(query.relations(), conn);
+        OperationTree myTree = new JoinOptimizer().optimize(stats, query.predicates(), query.valuePredicates());
+        System.out.println(TTJBenchmarkWriter.writeTree(query, "q10a_", myTree, conn));
+        System.out.println("My tree (outermost is final result):\n" + myTree);
+        TableRef ci = new TableRef("ci", new Table("imdb", "cast_info"));
+        TableRef chn = new TableRef("chn", new Table("imdb", "char_name"));
+        TableRef t = new TableRef("t", new Table("imdb", "title"));
+        TableRef rt = new TableRef("rt", new Table("imdb", "role_type"));
+        TableRef mc = new TableRef("mc", new Table("imdb", "movie_companies"));
+        TableRef ct = new TableRef("ct", new Table("imdb", "company_type"));
+        TableRef cn = new TableRef("cn", new Table("imdb", "company_name"));
+
+        System.out.println("\nSample tree:\n" + new JoinOptimizer().testSpecific(
+                List.of(
+                        List.of(mc),
+                        List.of(mc, cn),
+                        List.of(mc, ci),
+                        List.of(ci, rt),
+                        List.of(mc, ct),
+                        List.of(mc, t),
+                        List.of(ci, chn)
+                ),
+                stats, query.predicates(), query.valuePredicates()));
     }
 
     public static void test(BenchmarkQuery query, Connection conn) throws SQLException {

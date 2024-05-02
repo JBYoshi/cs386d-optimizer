@@ -45,11 +45,13 @@ public abstract class OperationTree {
 
     protected abstract void toString(StringBuilder builder, int depth);
 
+    public abstract OperationTree pushSemijoin(Column column, ColumnSelectivity selectivity);
+
     public static class TableScan extends OperationTree {
         private final TableRef table;
         private Set<ValuePredicate> predicates;
         public TableScan(RelationStats stats, TableRef table, Set<ValuePredicate> valuePredicates) {
-            super(applyPredicates(stats, valuePredicates), Set.of(table), stats.numRows());
+            super(stats, Set.of(table), stats.numRows());
             this.table = table;
             this.predicates = valuePredicates;
         }
@@ -59,6 +61,11 @@ public abstract class OperationTree {
                 stats = stats.applySelect(predicate.getSelectivity(stats.columnStats().get(predicate.getColumn())), Set.of(predicate.getColumn()));
             }
             return stats;
+        }
+
+        @Override
+        public OperationTree pushSemijoin(Column column, ColumnSelectivity selectivity) {
+            return new TableScan(getStats().applySelect(selectivity, Set.of(column)), table, predicates);
         }
 
         public TableRef getTable() {
@@ -97,6 +104,14 @@ public abstract class OperationTree {
 
         public OperationTree getRightTree() {
             return rightTree;
+        }
+
+        @Override
+        public OperationTree pushSemijoin(Column column, ColumnSelectivity selectivity) {
+            if (column.table().equals(rightTable)) {
+                return new Join(getStats().applySelect(selectivity, Set.of(column)), leftTree, rightTree.pushSemijoin(column, selectivity), leftTable, rightTable, predicates);
+            }
+            return new Join(getStats().applySelect(selectivity, Set.of(column)), leftTree.pushSemijoin(column, selectivity), rightTree, leftTable, rightTable, predicates);
         }
 
         @Override
