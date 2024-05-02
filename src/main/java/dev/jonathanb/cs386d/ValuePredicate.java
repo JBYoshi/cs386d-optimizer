@@ -39,7 +39,7 @@ public abstract class ValuePredicate {
             }
 
             if (invert) {
-                fractionKept = 1 - fractionKept - stats.fractionNull(); // TODO does this allow nulls? I think it does
+                fractionKept = 1 - fractionKept - stats.fractionNull();
 
                 Map<HistogramValue, Double> newMostCommon = new HashMap<>();
                 for (Map.Entry<HistogramValue, Double> entry : stats.mostCommon().entrySet()) {
