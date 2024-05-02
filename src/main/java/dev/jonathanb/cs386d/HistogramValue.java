@@ -14,8 +14,6 @@ public record HistogramValue(Object obj, BigDecimal numeric) implements Comparab
         return numeric.compareTo(o.numeric);
     }
 
-    private static final BigDecimal CHAR_SIZE = BigDecimal.valueOf(100000);
-
     private static BigDecimal typeToNumber(Object o) {
         if (o instanceof Number) {
             if (o instanceof BigDecimal) {
@@ -33,7 +31,7 @@ public record HistogramValue(Object obj, BigDecimal numeric) implements Comparab
             BigDecimal value = BigDecimal.ZERO;
             BigDecimal frac = BigDecimal.ONE;
             for (char c : ((String) o).toCharArray()) {
-                frac = frac.divide(CHAR_SIZE, RoundingMode.HALF_UP);
+                frac = frac.movePointLeft(5);
                 value = value.add(frac.multiply(BigDecimal.valueOf(c).add(BigDecimal.ONE)));
             }
             return value;
