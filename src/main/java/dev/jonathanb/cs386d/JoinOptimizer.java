@@ -5,6 +5,8 @@ import java.util.stream.Collectors;
 
 public class JoinOptimizer {
     public OperationTree optimize(Map<TableRef, RelationStats> baseRelations, Set<JoinPredicate> predicates, Set<ValuePredicate> valuePredicates) {
+        applyPredicates(baseRelations, predicates, valuePredicates);
+
         Map<Set<TableRef>, OperationTree> baseOps = new HashMap<>();
         for (Map.Entry<TableRef, RelationStats> baseRelation : baseRelations.entrySet()) {
             OperationTree tree = new OperationTree.TableScan(baseRelation.getValue(), baseRelation.getKey(), valuePredicates.stream().filter(x -> x.getColumn().table().equals(baseRelation.getKey())).collect(Collectors.toSet()));
@@ -56,6 +58,24 @@ public class JoinOptimizer {
 
         return prevOps.get(new LinkedHashSet<>(baseRelations.keySet()));
     }
+
+    private static void applyPredicates(Map<TableRef, RelationStats> baseRelations, Set<JoinPredicate> predicates, Set<ValuePredicate> valuePredicates) {
+        for (ValuePredicate valuePredicate : valuePredicates) {
+            baseRelations.computeIfPresent(valuePredicate.getColumn().table(), (table, stats) -> valuePredicate.apply(stats));
+        }
+
+        for (int i = 0; i < predicates.size(); i++) {
+            for (JoinPredicate predicate : predicates) {
+                RelationStats aStatsBefore = baseRelations.get(predicate.a().table());
+                RelationStats bStatsBefore = baseRelations.get(predicate.b().table());
+                RelationStats aStatsAfter = aStatsBefore.applySelect(aStatsBefore.columnStats().get(predicate.a()).semijoin(bStatsBefore.columnStats().get(predicate.b())), Set.of(predicate.a()));
+                RelationStats bStatsAfter = bStatsBefore.applySelect(bStatsBefore.columnStats().get(predicate.b()).semijoin(aStatsBefore.columnStats().get(predicate.a())), Set.of(predicate.b()));
+                baseRelations.put(predicate.a().table(), aStatsAfter);
+                baseRelations.put(predicate.b().table(), bStatsAfter);
+            }
+        }
+    }
+
     private int rounds = 0;
 
     private RelationStats computeJoinCost(OperationTree left, OperationTree right, Set<JoinPredicate> relevantPredicates) {

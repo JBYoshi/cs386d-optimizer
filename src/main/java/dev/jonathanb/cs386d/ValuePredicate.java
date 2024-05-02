@@ -14,6 +14,10 @@ public abstract class ValuePredicate {
         return this.column;
     }
 
+    public RelationStats apply(RelationStats stats) {
+        return stats.applySelect(getSelectivity(stats.columnStats().get(column)), Set.of(column));
+    }
+
     public abstract ColumnSelectivity getSelectivity(ColumnStats stats);
 
     public static class Equality extends ValuePredicate {
