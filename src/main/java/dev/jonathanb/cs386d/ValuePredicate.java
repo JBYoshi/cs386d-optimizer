@@ -35,7 +35,7 @@ public abstract class ValuePredicate {
             }
 
             if (invert) {
-                fractionKept = 1 - fractionKept;
+                fractionKept = 1 - fractionKept - stats.fractionNull(); // TODO does this allow nulls? I think it does
 
                 Map<HistogramValue, Double> newMostCommon = new HashMap<>();
                 for (Map.Entry<HistogramValue, Double> entry : stats.mostCommon().entrySet()) {
@@ -44,7 +44,7 @@ public abstract class ValuePredicate {
                     }
                 }
 
-                return new ColumnSelectivity(fractionKept, new ColumnStats(stats.fractionNull() / fractionKept, stats.nDistinct() - values.size(), newMostCommon, List.of()));
+                return new ColumnSelectivity(fractionKept, new ColumnStats(0, stats.nDistinct() - values.size(), newMostCommon, List.of()));
             } else {
                 Map<HistogramValue, Double> newMostCommon = new HashMap<>();
                 for (HistogramValue value : values) {
