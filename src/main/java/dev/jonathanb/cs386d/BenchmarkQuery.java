@@ -104,15 +104,24 @@ public record BenchmarkQuery(Set<TableRef> relations, Set<JoinPredicate> predica
             HistogramValue upper = toValue(bet.getBetweenExpressionEnd());
             values.add(new ValuePredicate.Inequality(column, lower, true, true, false));
             values.add(new ValuePredicate.Inequality(column, upper, false, true, true));
-        } else if (condition instanceof LikeExpression) {
-            // TODO
+        } else if (condition instanceof LikeExpression like) {
+            values.add(new ValuePredicate.Like(
+                    toColumn(like.getLeftExpression(), tablesByAlias),
+                    Set.of((String) toValue(like.getRightExpression()).obj()),
+                    like.isNot()));
         } else if (condition instanceof Parenthesis) {
             fillPredicates(((Parenthesis) condition).getExpression(), joins, values, tablesByAlias);
         } else if (condition instanceof OrExpression or) {
-            if (!(or.getLeftExpression() instanceof LikeExpression) || !(or.getRightExpression() instanceof LikeExpression)) {
+            if (!(or.getLeftExpression() instanceof LikeExpression left) || !(or.getRightExpression() instanceof LikeExpression right)) {
                 throw new UnsupportedOperationException(or.toString());
             }
-            // TODO
+            if (left.isNot() || right.isNot() || !left.getLeftExpression().toString().equals(right.getLeftExpression().toString())) {
+                throw new UnsupportedOperationException(or.toString());
+            }
+            values.add(new ValuePredicate.Like(
+                    toColumn(left.getLeftExpression(), tablesByAlias),
+                    Set.of((String) toValue(left.getRightExpression()).obj(), (String) toValue(right.getRightExpression()).obj()),
+                    false));
         } else if (condition instanceof IsNullExpression n) {
             values.add(new ValuePredicate.Null(toColumn(n.getLeftExpression(), tablesByAlias), n.isNot()));
         } else {

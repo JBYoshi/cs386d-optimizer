@@ -177,4 +177,28 @@ public abstract class ValuePredicate {
             return getColumn().toShortString() + (invert ? " IS NOT NULL" : " IS NULL");
         }
     }
+
+    public static class Like extends ValuePredicate {
+        private final Set<String> patterns;
+        private final boolean invert;
+
+        public Like(Column column, Set<String> patterns, boolean invert) {
+            super(column);
+            this.patterns = patterns;
+            this.invert = invert;
+        }
+
+        @Override
+        public ColumnSelectivity getSelectivity(ColumnStats stats) {
+            // TODO: don't have a good way to calculate this. No-op
+            return new ColumnSelectivity(1, stats);
+        }
+
+        @Override
+        public String toString() {
+            List<String> parts = patterns.stream().map(pattern -> getColumn().toShortString() + (invert ? " NOT LIKE '" : " LIKE '") + pattern + "'").toList();
+            if (parts.size() == 1) return parts.get(0);
+            return "(" + String.join(" OR ", parts) + ")";
+        }
+    }
 }

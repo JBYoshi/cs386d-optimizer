@@ -124,5 +124,13 @@ public abstract class OperationTree {
             leftTree.collectJoins(joins);
             rightTree.collectJoins(joins);
         }
+
+        public TableRef getLeftTable() {
+            return leftTable;
+        }
+
+        public TableRef getRightTable() {
+            return rightTable;
+        }
     }
 }
