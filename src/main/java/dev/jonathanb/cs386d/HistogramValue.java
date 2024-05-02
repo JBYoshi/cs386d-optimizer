@@ -38,4 +38,10 @@ public record HistogramValue(Object obj, BigDecimal numeric) implements Comparab
         }
         throw new UnsupportedOperationException("Cannot convert " + o.getClass() + " to a numeric equivalent");
     }
+
+    @Override
+    public String toString() {
+        if (obj instanceof String s) return "'" + s.replaceAll("'", "\\\\'") + "'";
+        return obj.toString();
+    }
 }

@@ -20,7 +20,7 @@ public class Main {
 
         BenchmarkQuery query = BenchmarkQuery.loadFromBenchmark("10a");
         Map<TableRef, RelationStats> stats = fetchStats(query.relations(), conn);
-        System.out.println("My tree:\n" + new JoinOptimizer().optimize(stats, query.predicates(), query.valuePredicates()));
+        System.out.println("My tree (outermost is final result):\n" + new JoinOptimizer().optimize(stats, query.predicates(), query.valuePredicates()));
         TableRef ci = new TableRef("ci", new Table("imdb", "cast_info"));
         TableRef chn = new TableRef("chn", new Table("imdb", "char_name"));
         TableRef t = new TableRef("t", new Table("imdb", "title"));
@@ -29,7 +29,7 @@ public class Main {
         TableRef ct = new TableRef("ct", new Table("imdb", "company_type"));
         TableRef cn = new TableRef("cn", new Table("imdb", "company_name"));
 
-        System.out.println("Main tree:\n" + new JoinOptimizer().testSpecific(
+        System.out.println("\nSample tree:\n" + new JoinOptimizer().testSpecific(
                 List.of(
                         List.of(mc),
                         List.of(mc, cn),

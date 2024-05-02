@@ -68,7 +68,7 @@ public abstract class OperationTree {
         @Override
         protected void toString(StringBuilder builder, int depth) {
             builder.append("|".repeat(depth));
-            builder.append("TableScan(").append(this.table).append(" WHERE ").append(this.predicates).append(") #").append(getStats().numRows()).append(" / ").append(getTotalCost());
+            builder.append("TableScan(").append(this.table).append(" WHERE ").append(this.predicates).append("); rows = ").append(getStats().numRows()).append(", cumulative cost = ").append(getTotalCost());
         }
 
         @Override
@@ -108,9 +108,9 @@ public abstract class OperationTree {
             builder.append(rightTable);
             builder.append(") on [");
             builder.append(predicates.stream().map(JoinPredicate::toString).collect(Collectors.joining(", ")));
-            builder.append("])# ");
+            builder.append("]); rows = ");
             builder.append(getStats().numRows());
-            builder.append(" / ");
+            builder.append(", cumulative cost = ");
             builder.append(getTotalCost());
             builder.append("\n");
             leftTree.toString(builder, depth + 1);

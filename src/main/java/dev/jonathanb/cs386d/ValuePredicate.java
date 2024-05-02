@@ -62,9 +62,9 @@ public abstract class ValuePredicate {
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
-            builder.append(getColumn());
+            builder.append(getColumn().toShortString());
             if (values.size() == 1) {
-                builder.append(invert ? " <> " : " = ");
+                builder.append(invert ? " != " : " = ");
                 builder.append(values.iterator().next());
             } else {
                 builder.append(invert ? " NOT IN (" : " IN (");
@@ -141,7 +141,7 @@ public abstract class ValuePredicate {
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
-            builder.append(getColumn());
+            builder.append(getColumn().toShortString());
             builder.append(" ");
             if (lessThan) builder.append('<');
             if (greaterThan) builder.append('>');
@@ -174,7 +174,7 @@ public abstract class ValuePredicate {
         
         @Override
         public String toString() {
-            return getColumn() + (invert ? " IS NOT NULL" : " IS NULL");
+            return getColumn().toShortString() + (invert ? " IS NOT NULL" : " IS NULL");
         }
     }
 }

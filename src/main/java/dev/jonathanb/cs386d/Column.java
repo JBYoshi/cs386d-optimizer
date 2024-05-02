@@ -5,4 +5,9 @@ public record Column(TableRef table, String columnName) {
     public String toString() {
         return table + "." + columnName;
     }
+
+    public String toShortString() {
+        if (table.alias() == null) return table.baseTable().tableName() + "." + columnName;
+        return table.alias() + "." + columnName;
+    }
 }

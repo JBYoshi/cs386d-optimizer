@@ -8,7 +8,7 @@ public record JoinPredicate(Column a, Column b) {
 
     @Override
     public String toString() {
-        return a + " = " + b;
+        return a.toShortString() + " = " + b.toShortString();
     }
 
     public RelationStats apply(RelationStats stats, Collection<JoinPredicate> existingPredicates) {
