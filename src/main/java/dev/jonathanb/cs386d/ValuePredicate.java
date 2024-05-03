@@ -190,8 +190,8 @@ public abstract class ValuePredicate {
 
         @Override
         public ColumnSelectivity getSelectivity(ColumnStats stats) {
-            // TODO: don't have a good way to calculate this. No-op
-            return new ColumnSelectivity(1, stats);
+            // TODO: don't have a good way to calculate this.
+            return new ColumnSelectivity(invert ? 0.9 : 0.1, stats);
         }
 
         @Override
