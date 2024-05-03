@@ -109,7 +109,8 @@ public abstract class OperationTree {
         @Override
         public OperationTree pushSemijoin(Column column, ColumnSelectivity selectivity) {
             if (column.table().equals(rightTable)) {
-                return new Join(getStats().applySelect(selectivity, Set.of(column)), leftTree, rightTree.pushSemijoin(column, selectivity), leftTable, rightTable, predicates);
+                // Don't push right because hash joins still need to read everything from the right side.
+                return new Join(getStats().applySelect(selectivity, Set.of(column)), leftTree, rightTree, leftTable, rightTable, predicates);
             }
             return new Join(getStats().applySelect(selectivity, Set.of(column)), leftTree.pushSemijoin(column, selectivity), rightTree, leftTable, rightTable, predicates);
         }
